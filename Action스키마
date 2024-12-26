@@ -1,0 +1,236 @@
+openapi: 3.1.0
+info:
+  title: Notion Database Integration
+  description: API for adding structured data to the Notion database "Daily memoir".
+  version: 1.0.0
+servers:
+  - url: https://api.notion.com/v1
+    description: Notion API Server
+paths:
+  /pages:
+    post:
+      operationId: addDailyMemoir
+      summary: Add a new entry to the "Daily memoir" Notion database.
+      description: Creates a new page in the specified Notion database using structured properties.
+      security:
+        - notionAuth: []
+      parameters:
+        - in: header
+          name: Notion-Version
+          required: true
+          schema:
+            type: string
+            example: "2022-06-28"
+          description: The version of the Notion API to use.
+        - in: header
+          name: Content-Type
+          required: true
+          schema:
+            type: string
+            enum: [application/json]
+            example: "application/json"
+          description: The MIME type of the body of the request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parent:
+                  type: object
+                  properties:
+                    database_id:
+                      type: string
+                      description: The ID of the Notion database in UUID format.
+                      example: "✅본인의 노션 데이터베이스 ID✅"
+                  required:
+                    - database_id
+                properties:
+                  type: object
+                  properties:
+                    날짜:
+                      type: object
+                      properties:
+                        date:
+                          type: object
+                          properties:
+                            start:
+                              type: string
+                              format: date-time
+                              description: The start date of the entry.
+                              example: "2024-12-26T00:00:00Z"
+                          required:
+                            - start
+                      required:
+                        - date
+                    리프레이밍:
+                      type: object
+                      properties:
+                        rich_text:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              text:
+                                type: object
+                                properties:
+                                  content:
+                                    type: string
+                                    description: Reframing text content.
+                                    example: "Today, I reframed a challenging situation by focusing on learning rather than the stress."
+                            required:
+                              - text
+                    반응:
+                      type: object
+                      properties:
+                        rich_text:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              text:
+                                type: object
+                                properties:
+                                  content:
+                                    type: string
+                                    description: Response text content.
+                                    example: "I responded calmly and took a deep breath before reacting."
+                            required:
+                              - text
+                    감정:
+                      type: object
+                      properties:
+                        rich_text:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              text:
+                                type: object
+                                properties:
+                                  content:
+                                    type: string
+                                    description: Emotional state content.
+                                    example: "I felt a mix of frustration and determination, but ultimately, calmness prevailed."
+                            required:
+                              - text
+                    이름:
+                      type: object
+                      properties:
+                        title:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              text:
+                                type: object
+                                properties:
+                                  content:
+                                    type: string
+                                    description: The title or name of the entry.
+                                    example: "User's Daily Memoir"
+                            required:
+                              - text
+                      required:
+                        - title
+                  required:
+                    - 날짜
+                    - 이름
+              required:
+                - parent
+                - properties
+      responses:
+        '200':
+          description: Page successfully created in the Notion database.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: The ID of the newly created page.
+                    example: "abcdef12-3456-7890-abcd-ef1234567890"
+                  created_time:
+                    type: string
+                    format: date-time
+                    description: The creation timestamp of the page.
+                    example: "2024-12-26T12:34:56Z"
+                  last_edited_time:
+                    type: string
+                    format: date-time
+                    description: The last edited timestamp of the page.
+                    example: "2024-12-26T12:34:56Z"
+        '400':
+          description: Bad Request - Invalid input or missing data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found - Database not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    notionAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    NotionPage:
+      type: object
+      properties:
+        parent:
+          type: object
+          properties:
+            database_id:
+              type: string
+              description: The database where the page will be created.
+              example: "✅본인의 노션 데이터베이스 ID✅"
+        properties:
+          type: object
+          description: Structured data for the new page.
+          additionalProperties:
+            type: object
+    ErrorResponse:
+      type: object
+      properties:
+        object:
+          type: string
+          example: "error"
+        status:
+          type: integer
+          example: 400
+        code:
+          type: string
+          example: "validation_error"
+        message:
+          type: string
+          example: "body.parent.page_id should be defined, instead was `undefined`.\nbody.parent.database_id should be a valid uuid, instead was `\"✅본인의 노션 데이터베이스 ID✅\"`."
+        request_id:
+          type: string
+          example: "e6ce854c-bd6c-49f0-ac7c-fe1d46769c3b"
+  headers:
+    Notion-Version:
+      description: The version of the Notion API to use.
+      required: true
+      schema:
+        type: string
+        example: "2022-06-28"
+    Content-Type:
+      description: The MIME type of the body of the request.
+      required: true
+      schema:
+        type: string
+        enum: [application/json]
+        example: "application/json"
