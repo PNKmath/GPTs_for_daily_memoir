@@ -282,7 +282,7 @@ components:
         - properties
       example:
         parent:
-          database_id: "125fa0f1-5444-80d8-9850-d8d1c9b6246e"
+          database_id: "✅Your_database_id✅"
         properties:
           이름:
             title:
