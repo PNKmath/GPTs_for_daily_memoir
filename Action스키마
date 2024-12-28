@@ -1,236 +1,361 @@
+
 openapi: 3.1.0
 info:
-  title: Notion Database Integration
-  description: API for adding structured data to the Notion database "Daily memoir".
+  title: Notion API - Add Entry to "Daily memoir" Database
+  description: API for interacting with the "Daily memoir" Notion database, allowing creation of new entries.
   version: 1.0.0
 servers:
   - url: https://api.notion.com/v1
-    description: Notion API Server
+    description: Notion API server
 paths:
   /pages:
     post:
-      operationId: addDailyMemoir
-      summary: Add a new entry to the "Daily memoir" Notion database.
-      description: Creates a new page in the specified Notion database using structured properties.
-      security:
-        - notionAuth: []
+      operationId: addDatabaseEntry
+      summary: Create a new page in the "Daily memoir" database
+      description: Add a new page (row) to the specified Notion database.
       parameters:
-        - in: header
-          name: Notion-Version
+        - name: Notion-Version
+          in: header
           required: true
+          description: The version of the Notion API to use.
           schema:
             type: string
             example: "2022-06-28"
-          description: The version of the Notion API to use.
-        - in: header
-          name: Content-Type
-          required: true
-          schema:
-            type: string
-            enum: [application/json]
-            example: "application/json"
-          description: The MIME type of the body of the request.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                parent:
-                  type: object
-                  properties:
-                    database_id:
-                      type: string
-                      description: The ID of the Notion database in UUID format.
-                      example: "✅본인의 노션 데이터베이스 ID✅"
-                  required:
-                    - database_id
-                properties:
-                  type: object
-                  properties:
-                    날짜:
-                      type: object
-                      properties:
-                        date:
-                          type: object
-                          properties:
-                            start:
-                              type: string
-                              format: date-time
-                              description: The start date of the entry.
-                              example: "2024-12-26T00:00:00Z"
-                          required:
-                            - start
-                      required:
-                        - date
-                    리프레이밍:
-                      type: object
-                      properties:
-                        rich_text:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              text:
-                                type: object
-                                properties:
-                                  content:
-                                    type: string
-                                    description: Reframing text content.
-                                    example: "Today, I reframed a challenging situation by focusing on learning rather than the stress."
-                            required:
-                              - text
-                    반응:
-                      type: object
-                      properties:
-                        rich_text:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              text:
-                                type: object
-                                properties:
-                                  content:
-                                    type: string
-                                    description: Response text content.
-                                    example: "I responded calmly and took a deep breath before reacting."
-                            required:
-                              - text
-                    감정:
-                      type: object
-                      properties:
-                        rich_text:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              text:
-                                type: object
-                                properties:
-                                  content:
-                                    type: string
-                                    description: Emotional state content.
-                                    example: "I felt a mix of frustration and determination, but ultimately, calmness prevailed."
-                            required:
-                              - text
-                    이름:
-                      type: object
-                      properties:
-                        title:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              text:
-                                type: object
-                                properties:
-                                  content:
-                                    type: string
-                                    description: The title or name of the entry.
-                                    example: "User's Daily Memoir"
-                            required:
-                              - text
-                      required:
-                        - title
-                  required:
-                    - 날짜
-                    - 이름
-              required:
-                - parent
-                - properties
+              $ref: '#/components/schemas/CreateDailyMemoirRequest'
       responses:
         '200':
-          description: Page successfully created in the Notion database.
+          description: Successfully created a new page
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: The ID of the newly created page.
-                    example: "abcdef12-3456-7890-abcd-ef1234567890"
-                  created_time:
-                    type: string
-                    format: date-time
-                    description: The creation timestamp of the page.
-                    example: "2024-12-26T12:34:56Z"
-                  last_edited_time:
-                    type: string
-                    format: date-time
-                    description: The last edited timestamp of the page.
-                    example: "2024-12-26T12:34:56Z"
+                $ref: '#/components/schemas/Page'
         '400':
-          description: Bad Request - Invalid input or missing data.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad request. The request is invalid or missing required parameters.
         '401':
-          description: Unauthorized - Invalid API key.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized. The API token is invalid or not provided.
         '404':
-          description: Not Found - Database not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found. The specified database ID does not exist.
+        '500':
+          description: Internal Server Error. Something went wrong on the Notion server.
+      security:
+        - bearerAuth: []
 components:
   securitySchemes:
-    notionAuth:
+    bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
   schemas:
-    NotionPage:
+    CreateDailyMemoirRequest:
       type: object
       properties:
         parent:
           type: object
+          description: Parent database information.
           properties:
             database_id:
               type: string
-              description: The database where the page will be created.
-              example: "✅본인의 노션 데이터베이스 ID✅"
+              description: The ID of the "Daily memoir" Notion database.
+          required:
+            - database_id
         properties:
           type: object
-          description: Structured data for the new page.
-          additionalProperties:
-            type: object
-    ErrorResponse:
+          description: Properties to set on the new "Daily memoir" page.
+          properties:
+            이름:
+              type: object
+              description: 제목(Title) 속성
+              properties:
+                title:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+                            description: 제목
+            날짜:
+              type: object
+              description: 날짜(Date) 속성
+              properties:
+                date:
+                  type: object
+                  properties:
+                    start:
+                      type: string
+                      format: date
+                      description: 시작 날짜
+            감정적_사건:
+              type: object
+              description: 감정적 사건(Rich text)
+              properties:
+                rich_text:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+            구체적_감정과_강도:
+              type: object
+              description: 구체적 감정과 강도(Rich text)
+              properties:
+                rich_text:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+            감정:
+              type: object
+              description: 감정(Rich text)
+              properties:
+                rich_text:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+            감정의_근원:
+              type: object
+              description: 감정의 근원(Rich text)
+              properties:
+                rich_text:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+            리프레이밍:
+              type: object
+              description: 리프레이밍(Rich text)
+              properties:
+                rich_text:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+            반응:
+              type: object
+              description: 반응(Rich text)
+              properties:
+                rich_text:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+            원하는_반응:
+              type: object
+              description: 원하는 반응(Rich text)
+              properties:
+                rich_text:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+            의도한_결과vs실제_일어난_일:
+              type: object
+              description: 의도한 결과 vs 실제 일어난 일(Rich text)
+              properties:
+                rich_text:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+            했던_일:
+              type: object
+              description: 했던 일(Rich text)
+              properties:
+                rich_text:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+            앞으로_할_일:
+              type: object
+              description: 앞으로 할 일(Rich text)
+              properties:
+                rich_text:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+            차이_분석_및_교훈:
+              type: object
+              description: 차이 분석 및 교훈(Rich text)
+              properties:
+                rich_text:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+            지속_개선_포기할_것:
+              type: object
+              description: 지속 개선/포기할 것(Rich text)
+              properties:
+                rich_text:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+          required:
+            - 이름
+            - 날짜
+            - 감정적_사건
+            - 구체적_감정과_강도
+            - 감정
+            - 감정의_근원
+            - 리프레이밍
+            - 반응
+            - 원하는_반응
+            - 의도한_결과vs실제_일어난_일
+            - 했던_일
+            - 앞으로_할_일
+            - 차이_분석_및_교훈
+            - 지속_개선_포기할_것
+      required:
+        - parent
+        - properties
+      example:
+        parent:
+          database_id: "125fa0f1-5444-80d8-9850-d8d1c9b6246e"
+        properties:
+          이름:
+            title:
+              - text:
+                  content: "오늘의 회고"
+          날짜:
+            date:
+              start: "2024-12-28"
+          감정적_사건:
+            rich_text:
+              - text:
+                  content: "친구와 갈등"
+          구체적_감정과_강도:
+            rich_text:
+              - text:
+                  content: "분노 7/10, 실망 5/10"
+          감정:
+            rich_text:
+              - text:
+                  content: "복잡하고 억울한 마음"
+          감정의_근원:
+            rich_text:
+              - text:
+                  content: "오래된 신뢰 문제"
+          리프레이밍:
+            rich_text:
+              - text:
+                  content: "다른 관점에서 이해하려 시도"
+          반응:
+            rich_text:
+              - text:
+                  content: "즉각적으로 따짐"
+          원하는_반응:
+            rich_text:
+              - text:
+                  content: "보다 차분하게 대화"
+          의도한_결과vs실제_일어난_일:
+            rich_text:
+              - text:
+                  content: "화해 목표였으나 되려 감정만 격해짐"
+          했던_일:
+            rich_text:
+              - text:
+                  content: "상황을 더 악화시키는 말"
+          앞으로_할_일:
+            rich_text:
+              - text:
+                  content: "우선 깊은 호흡 후 솔직한 대화"
+          차이_분석_및_교훈:
+            rich_text:
+              - text:
+                  content: "감정의 원인 구체화 후 대화 시 더 효과적"
+          지속_개선_포기할_것:
+            rich_text:
+              - text:
+                  content: "서운함만 곱씹지 않고 그때그때 솔직히 전달"
+    Page:
       type: object
       properties:
         object:
           type: string
-          example: "error"
-        status:
-          type: integer
-          example: 400
-        code:
+          example: "page"
+        id:
           type: string
-          example: "validation_error"
-        message:
+          description: The ID of the created page.
+        created_time:
           type: string
-          example: "body.parent.page_id should be defined, instead was `undefined`.\nbody.parent.database_id should be a valid uuid, instead was `\"✅본인의 노션 데이터베이스 ID✅\"`."
-        request_id:
+          format: date-time
+          description: When the page was created.
+        last_edited_time:
           type: string
-          example: "e6ce854c-bd6c-49f0-ac7c-fe1d46769c3b"
-  headers:
-    Notion-Version:
-      description: The version of the Notion API to use.
-      required: true
-      schema:
-        type: string
-        example: "2022-06-28"
-    Content-Type:
-      description: The MIME type of the body of the request.
-      required: true
-      schema:
-        type: string
-        enum: [application/json]
-        example: "application/json"
+          format: date-time
+          description: When the page was last edited.
+        properties:
+          type: object
+          description: The properties of the created page.
